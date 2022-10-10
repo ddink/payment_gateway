@@ -1,5 +1,6 @@
 defmodule PaymentGateway.CartCase do
   use ExUnit.CaseTemplate
+  import PaymentGateway.OrderRequestBuilder
 
   using do
     quote do
@@ -72,6 +73,13 @@ defmodule PaymentGateway.CartCase do
       }
     }
 
-    {:ok, cart: cart, order_added_map: order_added_map}
+    payu_latam_request_body = build_request_json({:payu_latam, cart})
+
+    {
+      :ok,
+      cart: cart,
+      order_added_map: order_added_map,
+      payu_latam_request_body: payu_latam_request_body
+    }
   end
 end

@@ -1,9 +1,5 @@
 defmodule PaymentGateway.SignatureEncoderTest do
-  use PaymentGateway.CartCase
-
-  # to be stored as environment/config variables
-  @merchant_api_key "4Vj8eK4rloUd272L48hsrarnUA"
-  @merchant_account_id "512321"
+  use PaymentGateway.CartCase, async: true
 
   test "reference_code/1 returns string with cart's first sku, env & date stamp", %{ cart: cart} do
     ref_code_list =
