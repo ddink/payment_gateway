@@ -22,7 +22,6 @@ defmodule PaymentGateway.Gateway.PayuLatam do
   # to be stored as environment/config variables
   @merchant_api_key "4Vj8eK4rloUd272L48hsrarnUA"
   @merchant_api_login "pRRXKOl8ikMmt9u"
-  @merchant_account_id "512321"
 
   import PaymentGateway.SignatureEncoder
   import PaymentGateway.RequestBuilderHelpers
@@ -43,18 +42,21 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {:error, "cart is missing language"}
   end
 
-  def add_transaction_order({%{
+  def add_order({%{
     language: language,
-    total_transaction_price: total_price,
-    tax_price: tax_price,
-    order_price: order_price,
-    currency: currency
+    order: %{
+      total_transaction_price: total_price,
+      tax_price: tax_price,
+      order_price: order_price,
+      currency: currency,
+      payment_country: payment_country
+    }
   } = cart, map}) do
     # TODO: create Order for notifyUrl field
 
     order = %{
       order: %{
-        accountId: @merchant_account_id,
+        accountId: payu_latam_test_account_id(payment_country),
         referenceCode: reference_code(cart),
         description: order_description(),
         language: language,
@@ -81,11 +83,11 @@ defmodule PaymentGateway.Gateway.PayuLatam do
 
     {:payu_latam, cart, map}
   end
-  def add_transaction_order(_request_data) do
-    {:error, "cart missing transaction order data"}
+  def add_order(_request_data) do
+    {:error, "cart missing order data"}
   end
 
-  def add_transaction_buyer({%{
+  def add_buyer({%{
     user: %{
       id: id,
       first_name: first_name,
@@ -121,20 +123,24 @@ defmodule PaymentGateway.Gateway.PayuLatam do
       }
     }
 
-    transaction =
-      map
-      |> Map.fetch!(:transaction)
+    transaction = Map.fetch!(map, :transaction)
+
+    order_buyer =
+      transaction
+      |> Map.fetch!(:order)
       |> Map.put(:buyer, buyer)
+
+    transaction = Map.put(transaction, :order, order_buyer)
 
     map = Map.put(map, :transaction, transaction)
 
     {:payu_latam, cart, map}
   end
-  def add_transaction_buyer(_request_data) do
+  def add_buyer(_request_data) do
     {:error, "cart missing transaction buyer data"}
   end
 
-  def add_transaction_shipping_address({%{
+  def add_shipping_address({%{
     shipping_address: %{
       first_line: first_line,
       second_line: second_line,
@@ -155,22 +161,26 @@ defmodule PaymentGateway.Gateway.PayuLatam do
       phone: phone_number
     }
 
-    transaction =
-      map
-      |> Map.fetch!(:transaction)
+    transaction = Map.fetch!(map, :transaction)
+
+    order =
+      transaction
+      |> Map.fetch!(:order)
       |> Map.put(:shippingAddress, shipping_address)
+
+    transaction = Map.put(transaction, :order, order)
 
     map = Map.put(map, :transaction, transaction)
 
     {:payu_latam, cart, map}
   end
-  def add_transaction_shipping_address(_request_data) do
+  def add_shipping_address(_request_data) do
     {:error, "cart missing transaction shipping address data"}
   end
 
   def add_payer({%{
     user: %{
-      id: id
+      id: _id
     },
     purchaser: %{
       first_name: first_name,
@@ -190,7 +200,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     }
   } = cart, map}) do
     payer = %{
-      merchantBuyerId: id,
+      # merchantPayerId: id,
       fullName: "#{first_name} #{last_name}",
       emailAddress: email,
       contactPhone: purchaser_phone_number,
@@ -206,7 +216,12 @@ defmodule PaymentGateway.Gateway.PayuLatam do
       }
     }
 
-    map = Map.put(map, :payer, payer)
+    transaction =
+      map
+      |> Map.fetch!(:transaction)
+      |> Map.put(:payer, payer)
+
+    map = Map.put(map, :transaction, transaction)
 
     {:payu_latam, cart, map}
   end
@@ -232,7 +247,12 @@ defmodule PaymentGateway.Gateway.PayuLatam do
       name: "#{first_name} #{last_name}"
     }
 
-    map = Map.put(map, :creditCard, credit_card)
+    transaction =
+      map
+      |> Map.fetch!(:transaction)
+      |> Map.put(:creditCard, credit_card)
+
+    map = Map.put(map, :transaction, transaction)
 
     {:payu_latam, cart, map}
   end
@@ -241,26 +261,27 @@ defmodule PaymentGateway.Gateway.PayuLatam do
   end
 
   def add_extra_parameters({%{
-    payment_method: payment_method,
-    payment_country: payment_country,
+    order: %{
+      payment_method: payment_method,
+      payment_country: payment_country
+    },
     cookie: cookie,
     browser_user_agent: browser_user_agent
   } = cart, map}) do
 
-    # TODO: add support for extra parameters like quota/payment installments
-    # extra_parameters = %{
-    #   "INSTALLMENTS_NUMBER": cart.payment_installments
-    # }
+    transaction =
+      map
+      |> Map.fetch!(:transaction)
+      |> Map.put(:paymentMethod, payment_method)
+      |> Map.put(:paymentCountry, payment_country)
+      |> Map.put(:deviceSessionId, device_session_id_signature(cookie))
+      |> Map.put(:ipAddress, ip_address())
+      |> Map.put(:cookie, cookie)
+      |> Map.put(:userAgent, browser_user_agent)
+      |> Map.put(:type, set_transaction_type())
+      |> add_three_domain_secure_attributes
 
-    map = map
-          # |> Map.put(:extraParameters, extra_parameters)
-          |> Map.put(:paymentMethod, payment_method)
-          |> Map.put(:paymentCountry, payment_country)
-          |> Map.put(:deviceSessionId, device_session_id_signature(cookie))
-          |> Map.put(:ipAddress, ip_address())
-          |> Map.put(:cookie, cookie)
-          |> Map.put(:userAgent, browser_user_agent)
-          |> add_three_domain_secure_attributes
+    map = Map.put(map, :transaction, transaction)
 
     # switches to {cart, map} return for OrderRequestBuilder.add_test/2
     {cart, map}
@@ -290,4 +311,6 @@ defmodule PaymentGateway.Gateway.PayuLatam do
   end
 
   def request_headers(), do: HTTPoison.process_request_headers(@request_headers)
+
+  defp set_transaction_type, do: "AUTHORIZATION_AND_CAPTURE"
 end

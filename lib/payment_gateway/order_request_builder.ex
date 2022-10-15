@@ -3,16 +3,18 @@ defmodule PaymentGateway.OrderRequestBuilder do
 
   def build_request_data({gateway, _cart} = order_data) do
     request_body = build_request_json(order_data)
+    url = api_url(gateway)
+    headers = request_headers(gateway)
 
-    {:ok, gateway, api_url(gateway), request_body}
+    {:ok, gateway, url, request_body, headers}
   end
 
   def build_request_json(order_data) do
     order_data
     |> add_merchant_info
-    |> add_transaction_order
-    |> add_transaction_buyer
-    |> add_transaction_shipping_address
+    |> add_order
+    |> add_buyer
+    |> add_shipping_address
     |> add_payer
     |> add_credit_card
     |> add_extra_parameters
@@ -22,16 +24,16 @@ defmodule PaymentGateway.OrderRequestBuilder do
 
   def add_merchant_info({:payu_latam, cart}), do: PayuLatam.add_merchant_info(cart)
 
-  def add_transaction_order({:payu_latam, cart, map}) do
-    PayuLatam.add_transaction_order({cart, map})
+  def add_order({:payu_latam, cart, map}) do
+    PayuLatam.add_order({cart, map})
   end
 
-  def add_transaction_buyer({:payu_latam, cart, map}) do
-    PayuLatam.add_transaction_buyer({cart, map})
+  def add_buyer({:payu_latam, cart, map}) do
+    PayuLatam.add_buyer({cart, map})
   end
 
-  def add_transaction_shipping_address({:payu_latam, cart, map}) do
-    PayuLatam.add_transaction_shipping_address({cart, map})
+  def add_shipping_address({:payu_latam, cart, map}) do
+    PayuLatam.add_shipping_address({cart, map})
   end
 
   def add_payer({:payu_latam, cart, map}) do
@@ -61,4 +63,6 @@ defmodule PaymentGateway.OrderRequestBuilder do
   end
 
   defp api_url(:payu_latam), do: PayuLatam.api_url()
+
+  defp request_headers(:payu_latam), do: PayuLatam.request_headers()
 end

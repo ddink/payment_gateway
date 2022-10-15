@@ -10,7 +10,7 @@ defmodule PaymentGateway.CartParser do
   def parse({:error, _reason} = error), do: error
   def parse({_gateway, _cart}), do: {:error, "unrecognized gateway"}
 
-  def select_gateway(%{ payment_country: country } = cart) do
+  def select_gateway(%{ order: %{payment_country: country} } = cart) do
     case Enum.member?(@payu_latam_countries, country) do
       true ->
         {:payu_latam, cart}

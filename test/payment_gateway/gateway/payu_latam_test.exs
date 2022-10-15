@@ -3,7 +3,7 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
   import PaymentGateway.Gateway.PayuLatam
 
   describe "add_merchant_info/1" do
-    test "takes a {:payu_latam, _} tuple and returns a {:payu_latam, _, _} tuple an initalized map", %{ cart: cart} do
+    test "takes a {:payu_latam, _} tuple and returns a {:payu_latam, _, _} tuple with an initalized map", %{ cart: cart} do
       assert {:payu_latam, _cart, map} = add_merchant_info(cart)
 
       assert map[:language] == "es"
@@ -13,9 +13,9 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
     end
   end
 
-  describe "add_transaction_order/1" do
+  describe "add_order/1" do
     test "takes {:payu_latam, cart, map} tuple and returns tuple with updated map", %{ cart: cart } do
-      assert {:payu_latam, _cart, map} = add_transaction_order({cart, %{}})
+      assert {:payu_latam, _cart, map} = add_order({cart, %{}})
 
       order = map[:transaction][:order]
       additional_values = order[:additionalValues]
@@ -36,11 +36,14 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
     end
   end
 
-  describe "add_transaction_buyer/1" do
-    test "takes {:payu_latam, cart, map} tuple and returns tuple with updated map", %{ cart: cart } do
-      assert {:payu_latam, _cart, map} =  add_transaction_buyer({cart, %{transaction: %{}}})
+  describe "add_buyer/1" do
+    test "takes {:payu_latam, cart, map} tuple and returns tuple with updated map",
+          %{
+            cart: cart,
+            order_added_map: map } do
+      assert {:payu_latam, _cart, map} =  add_buyer({cart, map})
 
-      buyer = map[:transaction][:buyer]
+      buyer = map[:transaction][:order][:buyer]
       buyer_shipping_address = buyer[:shippingAddress]
 
       assert buyer[:merchantBuyerId] == 1
@@ -59,16 +62,16 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
     end
   end
 
-  describe "add_transaction_shipping_address/1" do
+  describe "add_shipping_address/1" do
     test "takes {:payu_latam, cart, map} tuple and returns tuple with updated map",
           %{
             cart: cart,
-            order_added_map: order_added_map } do
-      assert {:payu_latam, _cart, map} = add_transaction_shipping_address({cart, order_added_map})
+            order_added_map: map } do
+      assert {:payu_latam, _cart, map} = add_shipping_address({cart, map})
 
       assert map[:transaction][:order][:accountId] == cart.user.id
 
-      transaction_shipping_address = map[:transaction][:shippingAddress]
+      transaction_shipping_address = map[:transaction][:order][:shippingAddress]
 
       assert transaction_shipping_address[:street1] == "Cr 23 No. 53-50"
       assert transaction_shipping_address[:street2] == "5555487"
@@ -81,13 +84,16 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
   end
 
   describe "add_payer/1" do
-    test "takes {:payu_latam, cart, map} tuple and returns tuple with updated map", %{ cart: cart } do
-      assert {:payu_latam, _cart, map} =  add_payer({cart, %{}})
+    test "takes {:payu_latam, cart, map} tuple and returns tuple with updated map",
+    %{
+      cart: cart,
+      order_added_map: map } do
+      assert {:payu_latam, _cart, map} =  add_payer({cart, map})
 
-      payer = map[:payer]
+      payer = map[:transaction][:payer]
       payer_billing_address = payer[:billingAddress]
 
-      assert payer[:merchantBuyerId] == 1
+      # assert payer[:merchantPayerId] == 1
       assert payer[:fullName] == "Santiago Ruiz"
       assert payer[:emailAddress] == "sr1960@gmail.com"
       assert payer[:contactPhone] == "555-426-9980"
@@ -105,10 +111,12 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
 
   describe "add_credit_card/1" do
     test "takes {:payu_latam, cart, map} tuple
-          and returns tuple with updated map", %{ cart: cart } do
-      assert {:payu_latam, _cart, map} = add_credit_card({cart, %{}})
+          and returns tuple with updated map", %{
+            cart: cart,
+            order_added_map: map } do
+      assert {:payu_latam, _cart, map} = add_credit_card({cart, map})
 
-      credit_card = map[:creditCard]
+      credit_card = map[:transaction][:creditCard]
 
       assert credit_card[:number] == "4111111111111111"
       assert credit_card[:securityCode] == "321"
@@ -119,18 +127,22 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
 
   describe "add_extra_parameters/1" do
     test "takes {:payu_latam, cart, map} tuple
-          and returns {cart, map} tuple with updated map", %{ cart: cart } do
-      assert {_cart, map} = add_extra_parameters({cart, %{}})
+          and returns {cart, map} tuple with updated map", %{
+            cart: cart,
+            order_added_map: map } do
+      assert {_cart, map} = add_extra_parameters({cart, map})
 
-      assert map[:paymentMethod] == "VISA"
-      assert map[:paymentCountry] == "CO"
-      assert map[:cookie] == "pt1t38347bs6jc9ruv2ecpv7o2"
-      assert map[:userAgent] == "Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0"
+      transaction = map[:transaction]
+
+      assert transaction[:paymentMethod] == "VISA"
+      assert transaction[:paymentCountry] == "CO"
+      assert transaction[:cookie] == "pt1t38347bs6jc9ruv2ecpv7o2"
+      assert transaction[:userAgent] == "Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0"
     end
   end
 
   defp first_sku(cart) do
-    cart.skus
+    cart.order.skus
     |> Map.keys
     |> List.first
   end
