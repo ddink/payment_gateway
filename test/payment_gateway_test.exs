@@ -1,18 +1,12 @@
 defmodule PaymentGatewayTest do
-  use ExUnit.Case
+  use PaymentGateway.CartCase, async: true
   doctest PaymentGateway
 
-  describe "send_api_call/1" do
-    test "makes POST request to selected payment gateway's api" do
-      # how to test this:
-      # 1) test against HTTP response
-      # 2) test against a mock (or double--can't remember which is whic)
+  describe "checkout/1" do
+    test "when transaction's api call is successfull returns a {:ok, response_body} tuple",
+      %{ cart: cart } do
+      assert {:ok, response_body} = PaymentGateway.checkout(cart)
+      assert is_map(response_body)
     end
-  end
-
-  describe "handle_transaction_response/1" do
-    test "persists transaction response to order schema's respective record"
-
-    test "sends email based on response code w/ relevant messages & reasons"
   end
 end

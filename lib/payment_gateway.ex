@@ -1,18 +1,11 @@
 defmodule PaymentGateway do
-  @moduledoc """
-  Documentation for `PaymentGateway`.
-  """
+  import PaymentGateway.{CartParser, Gateway}
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> PaymentGateway.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def checkout(cart) do
+    cart
+    |> select_gateway
+    |> parse
+    |> send_api_call
+    |> handle_transaction_response
   end
 end
