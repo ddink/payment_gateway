@@ -10,19 +10,21 @@ defmodule PaymentGateway.CartCase do
 
   setup _tags do
     cart = %{
-      total_transaction_price: 65_000,
-      tax_price: 10_378,
-      order_price: 54_622,
-      currency: "COP",
-      payment_installments: 1,
-      payment_method: "VISA",
-      payment_country: "CO",
-      language: "es",
       cookie: "pt1t38347bs6jc9ruv2ecpv7o2",
       browser_user_agent: "Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0",
-      skus: %{
-        "1234567890" => 2,
-        "0987654321" => 1
+      language: "es",
+      order: %{
+        total_transaction_price: 65_000,
+        tax_price: 10_378,
+        order_price: 54_622,
+        currency: "COP",
+        payment_installments: 1,
+        payment_method: "VISA",
+        payment_country: "CO",
+        skus: %{
+          "1234567890" => 2,
+          "0987654321" => 1
+        },
       },
       user: %{
         id: 1,

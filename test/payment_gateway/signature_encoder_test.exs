@@ -13,7 +13,7 @@ defmodule PaymentGateway.SignatureEncoderTest do
       |> String.downcase
       |> String.to_atom
 
-    assert Map.has_key?(cart.skus, Enum.at(ref_code_list, 0))
+    assert Map.has_key?(cart.order.skus, Enum.at(ref_code_list, 0))
     assert env == Mix.env()
     assert Enum.at(ref_code_list, 2) == Date.to_string(Date.utc_today)
   end
@@ -27,6 +27,6 @@ defmodule PaymentGateway.SignatureEncoderTest do
   end
 
   defp md5_hash(string) do
-    :crypto.hash(:md5, string) |> Base.encode16(case: :lower)
+    :erlang.md5(string) |> Base.encode16(case: :lower)
   end
 end
