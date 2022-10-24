@@ -58,3 +58,71 @@ cart = %{
 }
 
 headers = PayuLatam.request_headers()
+
+# Draft of in-memory cart struct
+#   can we validate it via Ecto.Changeset?
+# defmodule PaymentGateway.Cart do
+#   @enforce_keys [
+#     :order,
+#     :user,
+#     :shipping_address,
+#     :purchaser,
+#     :billing_address,
+#     :credit_card
+#   ]
+
+#   defstruct [
+#     :cookie,
+#     :browser_user_agent,
+#     :language,
+#     order: %{
+#       total_transaction_price: 0,
+#       tax_price: 0,
+#       order_price: 0,
+#       currency: "",
+#       payment_installments: 1,
+#       payment_method: "",
+#       payment_country: "",
+#       skus: %{}
+#     },
+#     user: %{
+#       id: 0,
+#       first_name: "",
+#       last_name: "",
+#       email: "",
+#       phone_number: "",
+#       documentation_number: ""
+#     },
+#     shipping_address: %{
+#       first_line: "",
+#       second_line: "",
+#       city: "",
+#       state: "",
+#       country: "",
+#       postal_code: "",
+#       phone_number: ""
+#     },
+#     purchaser: %{
+#       first_name: "",
+#       last_name: "",
+#       email: "",
+#       phone_number: "",
+#       documentation_number: ""
+#     },
+#     billing_address: %{
+#       first_line: "",
+#       second_line: "",
+#       city: "",
+#       state: "",
+#       country: "",
+#       postal_code: "",
+#       phone_number: ""
+#     },
+#     credit_card: %{
+#       number: "",
+#       security_code: "",
+#       expiration_date: "",
+#       name: ""
+#     }
+#   ]
+# end
