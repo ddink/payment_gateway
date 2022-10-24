@@ -26,7 +26,8 @@ defmodule PaymentGateway.MixProject do
   defp deps do
     [
       {:jason, "~> 1.4"},
-      {:httpoison, "~> 1.8"}
+      {:httpoison, "~> 1.8"},
+      {:timex, "~> 3.7"}
     ]
   end
 end
