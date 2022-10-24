@@ -19,27 +19,25 @@ defmodule PaymentGateway.Gateway.PayuLatam do
   @xid "Nmp3VFdWMlEwZ05pWGN3SGo4TDA="
   @directory_server_transaction_id "00000-70000b-5cc9-0000-000000000cb"
 
-  # to be stored as environment/config variables
-  @merchant_api_key "4Vj8eK4rloUd272L48hsrarnUA"
-  @merchant_api_login "pRRXKOl8ikMmt9u"
-
   import PaymentGateway.SignatureEncoder
   import PaymentGateway.RequestBuilderHelpers
+  import PaymentGateway.RequestBuilderHelpers.PayuLatam
+  alias __MODULE__.Tokens
 
   def add_merchant_info(%{language: language} = cart) do
     map = %{
       language: language,
       command: @transaction_command,
       merchant: %{
-        apiKey: @merchant_api_key,
-        apiLogin: @merchant_api_login
+        apiKey: merchant_api_key(),
+        apiLogin: merchant_api_login()
       }
     }
 
     {:payu_latam, cart, map}
   end
   def add_merchant_info(_cart) do
-    {:error, "cart is missing language"}
+    {:error, "cart is missing merchant data"}
   end
 
   def add_order({%{
@@ -52,15 +50,13 @@ defmodule PaymentGateway.Gateway.PayuLatam do
       payment_country: payment_country
     }
   } = cart, map}) do
-    # TODO: create Order for notifyUrl field
-
     order = %{
       order: %{
         accountId: payu_latam_test_account_id(payment_country),
         referenceCode: reference_code(cart),
         description: order_description(),
         language: language,
-        signature: order_signature(cart),
+        signature: payu_latam_order_signature(cart),
         notifyUrl: @notify_url,
         additionalValues: %{
           "TX_VALUE" => %{
@@ -84,7 +80,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {:payu_latam, cart, map}
   end
   def add_order(_request_data) do
-    {:error, "cart missing order data"}
+    {:error, "cart is missing order data"}
   end
 
   def add_buyer({%{
@@ -137,7 +133,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {:payu_latam, cart, map}
   end
   def add_buyer(_request_data) do
-    {:error, "cart missing transaction buyer data"}
+    {:error, "cart is missing transaction buyer data"}
   end
 
   def add_shipping_address({%{
@@ -175,7 +171,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {:payu_latam, cart, map}
   end
   def add_shipping_address(_request_data) do
-    {:error, "cart missing transaction shipping address data"}
+    {:error, "cart is missing transaction shipping address data"}
   end
 
   def add_payer({%{
@@ -226,7 +222,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {:payu_latam, cart, map}
   end
   def add_payer(_request_data) do
-    {:error, "cart missing payer data"}
+    {:error, "cart is missing payer data"}
   end
 
   def add_credit_card({%{
@@ -257,7 +253,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {:payu_latam, cart, map}
   end
   def add_credit_card(_request_data) do
-    {:error, "cart missing credit card data"}
+    {:error, "cart is missing credit card data"}
   end
 
   def add_extra_parameters({%{
@@ -287,7 +283,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {cart, map}
   end
   def add_extra_parameters(_request_data) do
-    {:error, "cart missing extra parameters data"}
+    {:error, "cart is missing extra parameters data"}
   end
 
   defp add_three_domain_secure_attributes(map) do
@@ -313,4 +309,34 @@ defmodule PaymentGateway.Gateway.PayuLatam do
   def request_headers(), do: HTTPoison.process_request_headers(@request_headers)
 
   defp set_transaction_type, do: "AUTHORIZATION_AND_CAPTURE"
+
+  def tokenize_credit_card(cart), do: Tokens.tokenize_credit_card(cart)
+
+  def delete_credit_card_token(cart), do: Tokens.delete_credit_card_token(cart)
+
+  def query_tokens(cart), do: Tokens.query_tokens(cart)
+
+  def add_token({%{
+    credit_card: %{
+      token_id: token_id,
+      security_code: security_code
+    }
+  } = cart, map}) do
+    credit_card = %{
+      securityCode: security_code
+    }
+
+    transaction =
+      map
+      |> Map.fetch!(:transaction)
+      |> Map.put(:creditCardTokenId, token_id)
+      |> Map.put(:creditCard, credit_card)
+
+    map = Map.put(map, :transaction, transaction)
+
+    {:payu_latam, cart, map}
+  end
+  def add_token(_request_data) do
+    {:error, "cart missing credit card token data"}
+  end
 end
