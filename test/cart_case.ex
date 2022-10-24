@@ -1,6 +1,6 @@
 defmodule PaymentGateway.CartCase do
   use ExUnit.CaseTemplate
-  import PaymentGateway.OrderRequestBuilder
+  import PaymentGateway.RequestBuilder
 
   using do
     quote do
@@ -32,7 +32,8 @@ defmodule PaymentGateway.CartCase do
         last_name: "Doe",
         email: "jd1978@gmail.com",
         phone_number: "555-123-4567",
-        documentation_number: "1234A4567B809K"
+        documentation_number: "1234A4567B809K",
+        default_credit_card_token_id: "46b7f03e-1b3b-4ce8-ad90-fe1a482f76c3"
       },
       shipping_address: %{
         first_line: "Cr 23 No. 53-50",
@@ -63,7 +64,9 @@ defmodule PaymentGateway.CartCase do
         number: "4111111111111111",
         security_code: "321",
         expiration_date: "2030/12",
-        name: "Santiago Ruiz"
+        payment_method_name: "VISA",
+        name: "Santiago Ruiz",
+        token_id: "46b7f03e-1b3b-4ce8-ad90-fe1a482f76c3"
       }
     }
 
