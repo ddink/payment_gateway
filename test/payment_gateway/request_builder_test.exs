@@ -1,16 +1,59 @@
-defmodule PaymentGateway.OrderRequestBuilderTest do
+defmodule PaymentGateway.RequestBuilderTest do
   use PaymentGateway.CartCase, async: true
-  import PaymentGateway.OrderRequestBuilder
+  import PaymentGateway.RequestBuilder
   alias PaymentGateway.Gateway.PayuLatam
 
   describe "build_request_data/1" do
-    test "takes a {:payu_latam, cart} tuple and returns {:ok, :payu_latam, url, json} tuple",
+    test "takes a {:payu_latam, :checkout, cart} tuple and
+          returns {:ok, :payu_latam, url, json, headers} tuple",
           %{ cart: cart } do
-      assert {:ok, :payu_latam, url, json, headers} = build_request_data({:payu_latam, cart})
-      assert url == PayuLatam.api_url()
+      assert_payu_latam_request_data_built(:checkout, cart)
+    end
+
+    test "takes a {:payu_latam, :pay_with_token, cart} tuple and
+          returns {:ok, :payu_latam, url, json, headers} tuple",
+          %{ cart: cart } do
+      assert_payu_latam_request_data_built(:pay_with_token, cart)
+    end
+
+    test "takes a {:payu_latam, :tokenize_credit_card, cart} tuple and
+          returns {:ok, :payu_latam, url, json, headers} tuple",
+         %{ cart: cart } do
+      assert_payu_latam_request_data_built(:tokenize_credit_card, cart)
+    end
+
+    test "takes a {:payu_latam, :delete_token, cart} tuple and
+          returns {:ok, :payu_latam, url, json, headers} tuple",
+         %{ cart: cart } do
+      assert_payu_latam_request_data_built(:delete_token, cart)
+    end
+
+    test "takes a {:payu_latam, :query_tokens, cart} tuple and
+          returns {:ok, :payu_latam, url, json, headers} tuple",
+         %{ cart: cart } do
+      assert_payu_latam_request_data_built(:query_tokens, cart)
+    end
+
+    test "error: takes a {:payu_latam, :token_transaction, cart} tuple and
+          returns {:ok, :payu_latam, url, error, headers} tuple",
+          %{ cart: cart } do
+      assert {:ok, :payu_latam, _url, error, _headers} = build_request_data({:payu_latam, :token_transaction, cart})
+      assert error == {:error, "unrecognized request type"}
+    end
+  end
+
+  defp assert_payu_latam_request_data_built(request_type, cart) do
+    assert {:ok, :payu_latam, url, json, headers} = build_request_data({:payu_latam, request_type, cart})
+    assert url == PayuLatam.api_url()
+    assert is_binary(json)
+    assert {:ok, _map} = Jason.decode(json)
+    assert is_list(headers)
+  end
+
+  describe "build_request_json/1" do
+    test "success: takes {gateway, cart} tuple and returns JSON encoded binary string", %{ cart: cart } do
+      json = build_request_json({:payu_latam, cart})
       assert is_binary(json)
-      assert {:ok, _map} = Jason.decode(json)
-      assert is_list(headers)
     end
   end
 
@@ -63,8 +106,21 @@ defmodule PaymentGateway.OrderRequestBuilderTest do
           and returns {:payu_latam, cart, map} tuple with updated map",
           %{
             cart: cart,
-            order_added_map: map } do
+            order_added_map: map
+          } do
       assert {:payu_latam, _cart, _map} = add_credit_card({:payu_latam, cart, map})
+    end
+  end
+
+  describe "add_token/1" do
+    test "takes {:payu_latam, cart, map} tuple
+          and returns {:payu_latam, cart, map} tuple with updated map",
+          %{
+            cart: cart,
+            order_added_map: map
+          } do
+      assert {:payu_latam, _cart, map} = add_token({:payu_latam, cart, map})
+      assert map.transaction.creditCardTokenId == cart.credit_card.token_id
     end
   end
 
@@ -73,7 +129,8 @@ defmodule PaymentGateway.OrderRequestBuilderTest do
           and returns {cart, map} tuple with updated map",
           %{
             cart: cart,
-            order_added_map: map } do
+            order_added_map: map
+          } do
       assert {_cart, _map} = add_extra_parameters({:payu_latam, cart, map})
     end
   end
