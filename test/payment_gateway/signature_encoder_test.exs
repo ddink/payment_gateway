@@ -18,8 +18,8 @@ defmodule PaymentGateway.SignatureEncoderTest do
     assert Enum.at(ref_code_list, 2) == Date.to_string(Date.utc_today)
   end
 
-  test "order_signature/1 returns md5 hash", %{ cart: cart } do
-    assert String.length(order_signature(cart)) == String.length(md5_hash("foo"))
+  test "payu_latam_order_signature/1 returns md5 hash", %{ cart: cart } do
+    assert String.length(payu_latam_order_signature(cart)) == String.length(md5_hash("foo"))
   end
 
   test "device_session_id_signature/1 returns md5 hash", %{ cart: cart } do

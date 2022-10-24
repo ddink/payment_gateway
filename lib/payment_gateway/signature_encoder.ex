@@ -1,8 +1,5 @@
 defmodule PaymentGateway.SignatureEncoder do
-
-  # to be stored as environment/config variables
-  @merchant_api_key "4Vj8eK4rloUd272L48hsrarnUA"
-  @merchant_account_id "508029"
+  import PaymentGateway.RequestBuilderHelpers.PayuLatam
 
   def reference_code(cart) do
     "#{first_sku(cart)}_#{env()}_#{Date.utc_today}"
@@ -24,8 +21,8 @@ defmodule PaymentGateway.SignatureEncoder do
     "Payment test description"
   end
 
-  def order_signature(cart) do
-    string = "#{@merchant_api_key}~#{@merchant_account_id}~"<>
+  def payu_latam_order_signature(cart) do
+    string = "#{merchant_api_key()}~#{merchant_account_id()}~"<>
              "#{reference_code(cart)}~#{cart.order.total_transaction_price}~#{cart.order.currency}"
 
     :crypto.hash(:md5, string) |> Base.encode16(case: :lower)
