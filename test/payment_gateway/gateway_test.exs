@@ -6,7 +6,8 @@ defmodule PaymentGateway.GatewayTest do
   @test_api_url "https://sandbox.api.payulatam.com/payments-api/4.0/service.cgi"
 
   describe "send_api_call/1" do
-    test "takes a {:ok, gateway, _, _} tuple and returns a {:payu_latam, %HTTPoison.Response{}}" do
+    @tag :api_call
+    test "success: takes a {:ok, gateway, url, body, headers} tuple and returns a {:payu_latam, %HTTPoison.Response{}}" do
       request_data = {:ok, :payu_latam, @test_api_url, "", PayuLatam.request_headers()}
 
       assert {:payu_latam, %HTTPoison.Response{} = response} = send_api_call(request_data)
@@ -14,22 +15,29 @@ defmodule PaymentGateway.GatewayTest do
       assert map["code"] == "ERROR"
     end
 
-    test "returns a successful HTTPoison.Response when api call is successful",
+    @tag :api_call
+    test "success: returns a successful HTTPoison.Response when api call is successful",
       %{ payu_latam_request_body: json} do
       request_data = {:ok, :payu_latam, @test_api_url, json, PayuLatam.request_headers()}
 
-      assert {:payu_latam, response} = send_api_call(request_data)
-      assert map = Jason.decode!(response.body)
-      assert map["code"] == "SUCCESS"
+      case send_api_call(request_data) do
+        {:payu_latam, response} ->
+          assert map = Jason.decode!(response.body)
+          assert map["code"] == "SUCCESS"
+        {:error, message} ->
+          assert message == :timeout
+      end
     end
 
-    test "takes a {:error, reason} tuple and returns the same tuple" do
+    @tag :api_call
+    test "error: takes a {:error, reason} tuple and returns the same tuple" do
       assert {:error, "error message"} = send_api_call({:error, "error message"})
     end
   end
 
   describe "handle_transaction_response/1" do
-    test "receives a {:payu_latam, %HTTPoison.Response{}} tuple and returns {:ok, json_map} tuple when transaction is successful" do
+    @tag :api_call
+    test "success: receives a {:payu_latam, %HTTPoison.Response{}} tuple and returns {:ok, json_map} tuple when transaction is successful" do
       response = %HTTPoison.Response{
         body: """
         {\"code\":\"SUCCESS\",\"error\":null,\"transactionResponse\":{\"orderId\":2147896070,\"transactionId\":\"a65c2de5-fdbb-4264-9c0c-7ea124cdf9fd\",
@@ -44,7 +52,8 @@ defmodule PaymentGateway.GatewayTest do
       assert is_map(body)
     end
 
-    test "receives a {:payu_latam, %HTTPoison.Response{}} tuple and returns {:error, reason} tuple when transaction is unsuccessful" do
+    @tag :api_call
+    test "error: receives a {:payu_latam, %HTTPoison.Response{}} tuple and returns {:error, reason} tuple when transaction is unsuccessful" do
       response = %HTTPoison.Response{
         body: "{\"code\":\"ERROR\",\"error\":\"Invalid request format\",\"transactionResponse\":null}"
       }
@@ -52,7 +61,8 @@ defmodule PaymentGateway.GatewayTest do
       assert reason == "The transaction call to the gateway's api was unsuccessful. Please try again in a few minutes."
     end
 
-    test "receives a {:error, :timeout} tuple and returns {:error, _message} when an api call times out" do
+    @tag :api_call
+    test "error: receives a {:error, :timeout} tuple and returns {:error, _message} when an api call times out" do
       assert {:error, reason} = handle_transaction_response({:error, :timeout})
       assert reason == "The transaction call to the gateway's api timed out. Please try again shortly."
     end

@@ -1,5 +1,4 @@
 defmodule PaymentGateway.Gateway do
-
   def send_api_call({:ok, :payu_latam, url, body, headers}) do
     case HTTPoison.post(url, body, headers) do
       {:ok, response} ->
