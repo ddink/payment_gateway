@@ -5,7 +5,7 @@ defmodule PaymentGateway.Gateway.PayuLatam.TokensTest do
   describe "tokenize_credit_card/3" do
     test "success: takes user, card_info, and language arguments separately and
           returns an encoded json string containing request data", %{ cart: cart } do
-      json = tokenize_credit_card(cart.user, cart.credit_card, cart.language)
+      json = tokenize_credit_card(cart.user, cart.payment_method, cart.language)
       assert is_binary(json)
 
       request_data = Jason.decode!(json)
@@ -35,13 +35,13 @@ defmodule PaymentGateway.Gateway.PayuLatam.TokensTest do
   describe "delete_credit_card_token/3" do
     test "success: takes user, card_info, and language arguments separately and
           returns an encoded json string containing request data", %{ cart: cart } do
-      json = delete_credit_card_token(cart.user, cart.credit_card, cart.language)
+      json = delete_credit_card_token(cart.user, cart.payment_method, cart.language)
       assert is_binary(json)
 
       request_data = Jason.decode!(json)
       assert is_map(request_data)
       assert request_data["removeCreditCardToken"]["payerId"] == cart.user.id
-      assert request_data["removeCreditCardToken"]["creditCardTokenId"] == cart.credit_card.token_id
+      assert request_data["removeCreditCardToken"]["creditCardTokenId"] == cart.payment_method.cc_token_id
     end
   end
 
@@ -53,7 +53,7 @@ defmodule PaymentGateway.Gateway.PayuLatam.TokensTest do
       request_data = Jason.decode!(json)
       assert is_map(request_data)
       assert request_data["removeCreditCardToken"]["payerId"] == cart.user.id
-      assert request_data["removeCreditCardToken"]["creditCardTokenId"] == cart.credit_card.token_id
+      assert request_data["removeCreditCardToken"]["creditCardTokenId"] == cart.payment_method.cc_token_id
     end
 
     test "error: returns {:error, message} tuple if cart is missing request data" do
@@ -81,12 +81,12 @@ defmodule PaymentGateway.Gateway.PayuLatam.TokensTest do
 
       request_data = Jason.decode!(json)
       assert is_map(request_data)
-      assert request_data["creditCardTokenInformation"]["creditCardTokenId"] == cart.credit_card.token_id
+      assert request_data["creditCardTokenInformation"]["creditCardTokenId"] == cart.payment_method.cc_token_id
     end
 
     test "success: takes a cart without token id and returns an encoded json string containing map of request data", %{ cart: cart } do
       inserted_at = Timex.now() |> Timex.shift(years: -1)
-      cart = cart |> Map.put(:credit_card, %{}) |> Map.merge(%{ user: %{ inserted_at: inserted_at } } )
+      cart = cart |> Map.put(:payment_method, %{}) |> Map.merge(%{ user: %{ inserted_at: inserted_at } } )
       json = query_tokens(cart)
 
       assert is_binary(json)

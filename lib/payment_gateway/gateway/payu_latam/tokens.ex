@@ -6,7 +6,7 @@ defmodule PaymentGateway.Gateway.PayuLatam.Tokens do
   import PaymentGateway.RequestBuilderHelpers.PayuLatam
   use Timex
 
-  def tokenize_credit_card(user, card_info, language) do
+  def tokenize_credit_card(user, payment_method, language) do
     %{
       language: language,
       command: @create_token_command,
@@ -16,11 +16,11 @@ defmodule PaymentGateway.Gateway.PayuLatam.Tokens do
       },
       creditCardToken: %{
          payerId: user.id,
-         name: card_info.name,
+         name: payment_method.cc_name,
          identificationNumber: user.documentation_number,
-         paymentMethod: card_info.payment_method_name,
-         number: card_info.number,
-         expirationDate: card_info.expiration_date
+         paymentMethod: payment_method.name,
+         number: payment_method.cc_number,
+         expirationDate: payment_method.cc_expiration_date
       }
     } |> encode
   end
@@ -30,11 +30,11 @@ defmodule PaymentGateway.Gateway.PayuLatam.Tokens do
       id: id,
       documentation_number: documentation_number
     },
-    credit_card: %{
-      number: number,
-      expiration_date: expiration_date,
-      name: name,
-      payment_method_name: payment_method
+    payment_method: %{
+      cc_number: number,
+      cc_expiration_date: expiration_date,
+      cc_name: name,
+      name: payment_method
     }
   } = _cart) do
     %{
@@ -58,7 +58,7 @@ defmodule PaymentGateway.Gateway.PayuLatam.Tokens do
     {:error, "missing request data needed to tokenize credit card"}
   end
 
-  def delete_credit_card_token(user, card_info, language) do
+  def delete_credit_card_token(user, payment_method, language) do
     %{
       language: language,
       command: @delete_token_command,
@@ -68,14 +68,14 @@ defmodule PaymentGateway.Gateway.PayuLatam.Tokens do
       },
       removeCreditCardToken: %{
         payerId: user.id,
-        creditCardTokenId: card_info.token_id
+        creditCardTokenId: payment_method.cc_token_id
       }
     } |> encode
   end
   def delete_credit_card_token(%{
     language: language,
     user: %{ id: id },
-    credit_card: %{ token_id: token_id }
+    payment_method: %{ cc_token_id: token_id }
   } = _cart) do
     %{
       language: language,
@@ -109,7 +109,7 @@ defmodule PaymentGateway.Gateway.PayuLatam.Tokens do
   end
   def query_tokens(%{
     language: language,
-    credit_card: %{ token_id: token_id }
+    payment_method: %{ cc_token_id: token_id }
   } = _cart) do
     %{
       language: language,
