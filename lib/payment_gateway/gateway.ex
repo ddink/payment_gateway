@@ -1,6 +1,16 @@
 defmodule PaymentGateway.Gateway do
-  def send_api_call({:ok, :payu_latam, url, body, headers}) do
-    case HTTPoison.post(url, body, headers) do
+  def send_request(request_data) do
+    with {_gateway, _body} = response <- send_api_call(request_data),
+         {:ok, response_body} <- handle_transaction_response(response) do
+      {:ok, response_body}
+    else
+      error -> error
+    end
+  end
+
+  def send_api_call({:ok, :payu_latam, url, body, headers, options}) do
+    # HTTPoison.post(url, body, headers, hackney: [pool: :payu_latam])
+    case HTTPoison.post(url, body, headers, options) do
       {:ok, response} ->
         {:payu_latam, response}
       {:error, %HTTPoison.Error{reason: reason}} ->

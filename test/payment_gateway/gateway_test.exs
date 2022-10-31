@@ -5,10 +5,25 @@ defmodule PaymentGateway.GatewayTest do
 
   @test_api_url "https://sandbox.api.payulatam.com/payments-api/4.0/service.cgi"
 
+  describe "send_request/1" do
+    @tag :api_call
+    test "success: takes a {:ok, gateway, url, body, headers} tuple and returns a {:ok, response_body} tuple",
+      %{ payu_latam_request_body: json} do
+        request_data = payu_latam_request_data(json)
+
+        case send_request(request_data) do
+          {:error, reason} ->
+            assert reason =~ "timed out"
+          response ->
+            assert {:ok, _response_body} = response
+        end
+    end
+  end
+
   describe "send_api_call/1" do
     @tag :api_call
     test "success: takes a {:ok, gateway, url, body, headers} tuple and returns a {:payu_latam, %HTTPoison.Response{}}" do
-      request_data = {:ok, :payu_latam, @test_api_url, "", PayuLatam.request_headers()}
+      request_data = payu_latam_request_data("")
 
       assert {:payu_latam, %HTTPoison.Response{} = response} = send_api_call(request_data)
       assert map = Jason.decode!(response.body)
@@ -18,7 +33,7 @@ defmodule PaymentGateway.GatewayTest do
     @tag :api_call
     test "success: returns a successful HTTPoison.Response when api call is successful",
       %{ payu_latam_request_body: json} do
-      request_data = {:ok, :payu_latam, @test_api_url, json, PayuLatam.request_headers()}
+      request_data = payu_latam_request_data(json)
 
       case send_api_call(request_data) do
         {:payu_latam, response} ->
@@ -33,6 +48,10 @@ defmodule PaymentGateway.GatewayTest do
     test "error: takes a {:error, reason} tuple and returns the same tuple" do
       assert {:error, "error message"} = send_api_call({:error, "error message"})
     end
+  end
+
+  defp payu_latam_request_data(json) do
+    {:ok, :payu_latam, @test_api_url, json, PayuLatam.request_headers(), PayuLatam.request_options()}
   end
 
   describe "handle_transaction_response/1" do
