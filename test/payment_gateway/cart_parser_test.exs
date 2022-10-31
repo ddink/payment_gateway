@@ -4,11 +4,11 @@ defmodule PaymentGateway.CartParserTest do
 
   describe "parse/1" do
     test "returns all data required for cart checkout transaction request", %{ cart: cart } do
-      assert {:ok, :payu_latam, _url, _request_body, _headers} = parse({:payu_latam, :checkout, cart})
+      assert {:ok, :payu_latam, _url, _request_body, _headers, _options} = parse({:payu_latam, :checkout, cart})
     end
 
     test "returns error for unrecognized gateways" do
-      assert parse({:epay, %{}}) == {:error, "unrecognized gateway"}
+      assert parse({:epay, :checkout, %{}}) == {:error, "unrecognized gateway"}
     end
 
     test "returns error tuple when receiving {:error, _reason} tuple" do
