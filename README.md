@@ -1,6 +1,4 @@
-# PaymentGateway
-
-**TODO: Add description**
+# Payment Gateway
 
 ## Installation
 

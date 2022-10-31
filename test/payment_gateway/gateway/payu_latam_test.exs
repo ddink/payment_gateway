@@ -105,13 +105,13 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
     end
   end
 
-  describe "add_payer/1" do
+  describe "add_customer/1" do
     test "takes {cart, map} tuple and returns tuple with updated map",
     %{
       cart: cart,
       order_added_map: map
     } do
-      assert {:payu_latam, _cart, map} =  add_payer({cart, map})
+      assert {:payu_latam, _cart, map} =  add_customer({cart, map})
 
       payer = map[:transaction][:payer]
       payer_billing_address = payer[:billingAddress]
@@ -132,18 +132,20 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
     end
 
     test "returns {:error, message} tuple when passed an invalid request data" do
-      assert {:error, message} = add_payer(%{})
-      assert message == "cart is missing payer data"
+      assert {:error, message} = add_customer({%{}, %{}})
+      assert message == "cart is missing customer data"
     end
   end
 
-  describe "add_credit_card/1" do
-    test "takes {cart, map} tuple and returns tuple with updated map",
-          %{
-            cart: cart,
-            order_added_map: map
-          } do
-      assert {:payu_latam, _cart, map} = add_credit_card({cart, map})
+  describe "add_payment_method/1" do
+    test "success: takes {cart, map} tuple, accepts credit card payment method, and returns tuple with updated map",
+        %{
+          cart: cart,
+          order_added_map: map
+        } do
+      assert cart.order.payment_method == "VISA"
+
+      assert {:payu_latam, _cart, map} = add_payment_method({cart, map})
 
       credit_card = map[:transaction][:creditCard]
 
@@ -153,8 +155,38 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
       assert credit_card[:name] == "Santiago Ruiz"
     end
 
-    test "returns {:error, message} tuple when passed an invalid request data" do
-      assert {:error, message} = add_credit_card(%{})
+    test "success: takes {cart, map} tuple, accepts non credit card payment methods, and returns tuple updated map",
+      %{
+        cart: cart,
+        order_added_map: map
+      } do
+      cart = Map.merge(cart, %{ order: %{ payment_method: "EFECTY" }})  
+
+      assert {:payu_latam, _cart, map} = add_payment_method({cart, map})
+
+      assert map[:transaction][:paymentMethod] == "EFECTY"
+      assert map[:transaction][:creditCard] |> is_nil
+
+      cart = Map.merge(cart, %{ order: %{ payment_method: "PSE" }})  
+
+      assert {:payu_latam, _cart, map} = add_payment_method({cart, map})
+
+      assert map[:transaction][:paymentMethod] == "PSE"
+      assert map[:transaction][:creditCard] |> is_nil
+    end
+
+    test "error: returns {:error, message} tuple when passed an invalid payment method",
+    %{
+      cart: cart,
+      order_added_map: map
+    } do
+      cart = Map.merge(cart, %{ order: %{ payment_method: "RAPIPAYGO" }})  
+
+      assert {:error, _message} = add_payment_method({cart, map})
+    end
+
+    test "error: returns {:error, message} tuple when passed an invalid request data" do
+      assert {:error, message} = add_payment_method(%{})
       assert message == "cart is missing credit card data"
     end
   end
@@ -223,9 +255,9 @@ defmodule PaymentGateway.Gateway.PayuLatamTest do
       assert {:payu_latam, _cart, map} = add_token({cart, map})
 
       assert map[:transaction][:creditCardTokenId] ==
-              cart.credit_card.token_id
+              cart.payment_method.cc_token_id
       assert map[:transaction][:creditCard][:securityCode] ==
-              cart.credit_card.security_code
+              cart.payment_method.cc_security_code
     end
 
     test "returns {:error, message} tuple when passed an invalid request data" do

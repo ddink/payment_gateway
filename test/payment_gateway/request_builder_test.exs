@@ -37,13 +37,13 @@ defmodule PaymentGateway.RequestBuilderTest do
     test "error: takes a {:payu_latam, :token_transaction, cart} tuple and
           returns {:ok, :payu_latam, url, error, headers} tuple",
           %{ cart: cart } do
-      assert {:ok, :payu_latam, _url, error, _headers} = build_request_data({:payu_latam, :token_transaction, cart})
+      assert {:ok, :payu_latam, _url, error, _headers, _options} = build_request_data({:payu_latam, :token_transaction, cart})
       assert error == {:error, "unrecognized request type"}
     end
   end
 
   defp assert_payu_latam_request_data_built(request_type, cart) do
-    assert {:ok, :payu_latam, url, json, headers} = build_request_data({:payu_latam, request_type, cart})
+    assert {:ok, :payu_latam, url, json, headers, _options} = build_request_data({:payu_latam, request_type, cart})
     assert url == PayuLatam.api_url()
     assert is_binary(json)
     assert {:ok, _map} = Jason.decode(json)
@@ -91,24 +91,24 @@ defmodule PaymentGateway.RequestBuilderTest do
     end
   end
 
-  describe "add_payer/1" do
+  describe "add_customer/1" do
     test "takes {:payu_latam, cart, map} tuple and
           returns {:payu_latam, cart, map} tuple with updated map",
           %{
             cart: cart,
             order_added_map: map } do
-      assert {:payu_latam, _cart, _map} =  add_payer({:payu_latam, cart, map})
+      assert {:payu_latam, _cart, _map} =  add_customer({:payu_latam, cart, map})
     end
   end
 
-  describe "add_credit_card/1" do
+  describe "add_payment_method/1" do
     test "takes {:payu_latam, cart, map} tuple
           and returns {:payu_latam, cart, map} tuple with updated map",
           %{
             cart: cart,
             order_added_map: map
           } do
-      assert {:payu_latam, _cart, _map} = add_credit_card({:payu_latam, cart, map})
+      assert {:payu_latam, _cart, _map} = add_payment_method({:payu_latam, cart, map})
     end
   end
 
@@ -120,7 +120,7 @@ defmodule PaymentGateway.RequestBuilderTest do
             order_added_map: map
           } do
       assert {:payu_latam, _cart, map} = add_token({:payu_latam, cart, map})
-      assert map.transaction.creditCardTokenId == cart.credit_card.token_id
+      assert map.transaction.creditCardTokenId == cart.payment_method.cc_token_id
     end
   end
 
