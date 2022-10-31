@@ -18,7 +18,8 @@ defmodule PaymentGateway.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :crypto, :httpoison]
+      extra_applications: [:logger, :crypto, :httpoison],
+      mod: {PaymentGateway.Application, [:start_link]}
     ]
   end
 
