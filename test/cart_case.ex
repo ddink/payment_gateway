@@ -10,6 +10,7 @@ defmodule PaymentGateway.CartCase do
 
   setup _tags do
     cart = %{
+      id: "321",
       cookie: "pt1t38347bs6jc9ruv2ecpv7o2",
       browser_user_agent: "Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0",
       language: "es",
@@ -22,10 +23,12 @@ defmodule PaymentGateway.CartCase do
         payment_method: "VISA",
         payment_country: "CO",
         skus: %{
-          "1234567890" => 2,
-          "0987654321" => 1
+          "1234567890" => "2",
+          "0987654321" => "1"
         },
+        cart_id: "321"
       },
+      # user_id: "123",
       user: %{
         id: 1,
         first_name: "Juan",
@@ -44,7 +47,7 @@ defmodule PaymentGateway.CartCase do
         postal_code: "000000",
         phone_number: "555-987-6543"
       },
-      purchaser: %{
+      customer: %{
         first_name: "Santiago",
         last_name: "Ruiz",
         email: "sr1960@gmail.com",
@@ -60,13 +63,13 @@ defmodule PaymentGateway.CartCase do
         postal_code: "000000",
         phone_number: "555-756-3126"
       },
-      credit_card: %{
-        number: "4111111111111111",
-        security_code: "321",
-        expiration_date: "2030/12",
-        payment_method_name: "VISA",
-        name: "Santiago Ruiz",
-        token_id: "46b7f03e-1b3b-4ce8-ad90-fe1a482f76c3"
+      payment_method: %{
+        cc_number: "4111111111111111",
+        cc_security_code: "321",
+        cc_expiration_date: "2030/12",
+        cc_name: "Santiago Ruiz",
+        cc_token_id: "46b7f03e-1b3b-4ce8-ad90-fe1a482f76c3",
+        name: "VISA"
       }
     }
 

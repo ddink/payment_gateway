@@ -2,27 +2,33 @@ alias PaymentGateway.OrderRequestBuilder
 alias PaymentGateway.Gateway.PayuLatam
 
 cart = %{
-  total_transaction_price: 65_000,
-  tax_price: 10_000,
-  order_price: 55_000,
-  currency: "COP",
-  payment_installments: 1,
-  payment_method: "VISA",
-  payment_country: "CO",
-  language: "en",
+  id: "321",
   cookie: "pt1t38347bs6jc9ruv2ecpv7o2",
   browser_user_agent: "Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0",
-  skus: %{
-    "1234567890" => 2,
-    "0987654321" => 1
+  language: "es",
+  order: %{
+    total_transaction_price: 65_000,
+    tax_price: 10_378,
+    order_price: 54_622,
+    currency: "COP",
+    payment_installments: 1,
+    payment_method: "VISA",
+    payment_country: "CO",
+    skus: %{
+      "1234567890" => "2",
+      "0987654321" => "1"
+    },
+    cart_id: "321"
   },
+  # user_id: "123",
   user: %{
     id: 1,
     first_name: "Juan",
     last_name: "Doe",
     email: "jd1978@gmail.com",
     phone_number: "555-123-4567",
-    documentation_number: "1234A4567B809K"
+    documentation_number: "1234A4567B809K",
+    default_credit_card_token_id: "46b7f03e-1b3b-4ce8-ad90-fe1a482f76c3"
   },
   shipping_address: %{
     first_line: "Cr 23 No. 53-50",
@@ -33,7 +39,7 @@ cart = %{
     postal_code: "000000",
     phone_number: "555-987-6543"
   },
-  purchaser: %{
+  customer: %{
     first_name: "Santiago",
     last_name: "Ruiz",
     email: "sr1960@gmail.com",
@@ -49,11 +55,13 @@ cart = %{
     postal_code: "000000",
     phone_number: "555-756-3126"
   },
-  credit_card: %{
-    number: "4111111111111111",
-    security_code: "321",
-    expiration_date: "2030/12",
-    name: "Santiago Ruiz"
+  payment_method: %{
+    cc_number: "4111111111111111",
+    cc_security_code: "321",
+    cc_expiration_date: "2030/12",
+    cc_name: "Santiago Ruiz",
+    cc_token_id: "46b7f03e-1b3b-4ce8-ad90-fe1a482f76c3",
+    name: "VISA"
   }
 }
 
