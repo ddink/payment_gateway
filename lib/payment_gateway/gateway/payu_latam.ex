@@ -9,6 +9,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {"Accept", "application/json"},
     {"Content-Length", "length"}
   ]
+  @request_options [hackney: [pool: :payu_latam]]
 
   # attributes that will be determined by client
 
@@ -18,6 +19,17 @@ defmodule PaymentGateway.Gateway.PayuLatam do
   @cavv "AOvG5rV058/iAAWhssPUAAADFA=="
   @xid "Nmp3VFdWMlEwZ05pWGN3SGo4TDA="
   @directory_server_transaction_id "00000-70000b-5cc9-0000-000000000cb"
+
+  @credit_cards [
+    "AMEX", "ARGENCARD", "CABAL", "CENCOSUD", "CODENSA", "DINERS", "ELO", 
+    "HIPERCARD", "MASTERCARD", "MASTERCARD_DEBIT", "NARANJA", "SHOPPING", 
+    "TRANSBANK_DEBIT", "VISA", "VISA_DEBIT"
+  ]
+  @non_credit_card_payment_methods [
+    "BANK_REFERENCED", "BOLETO_BANCARIO", "COBRO_EXPRESS", "EFECTY", "ITAU", 
+    "MULTICAJA", "PAGOFACIL", "PAGOEFECTIVO", "PIX", "PSE", "RAPIPAGO", 
+    "OTHERS_CASH", "OTHERS_CASH_MX", "OXXO", "SEVEN_ELEVEN", "SPEI"
+  ]
 
   import PaymentGateway.SignatureEncoder
   import PaymentGateway.RequestBuilderHelpers
@@ -174,11 +186,11 @@ defmodule PaymentGateway.Gateway.PayuLatam do
     {:error, "cart is missing transaction shipping address data"}
   end
 
-  def add_payer({%{
+  def add_customer({%{
     user: %{
       id: _id
     },
-    purchaser: %{
+    customer: %{
       first_name: first_name,
       last_name: last_name,
       email: email,
@@ -221,21 +233,39 @@ defmodule PaymentGateway.Gateway.PayuLatam do
 
     {:payu_latam, cart, map}
   end
-  def add_payer(_request_data) do
-    {:error, "cart is missing payer data"}
+  def add_customer(_request_data) do
+    {:error, "cart is missing customer data"}
   end
 
-  def add_credit_card({%{
-    purchaser: %{
+  def add_payment_method({%{
+    order: %{
+      payment_method: payment_method
+    }
+  } = cart, map}) when payment_method in @non_credit_card_payment_methods do
+
+    transaction =
+      map
+      |> Map.fetch!(:transaction)
+      |> Map.put(:paymentMethod, payment_method)
+
+    map = Map.put(map, :transaction, transaction)
+
+    {:payu_latam, cart, map}
+  end
+  def add_payment_method({%{
+    order: %{
+      payment_method: payment_method
+    },
+    customer: %{
       first_name: first_name,
       last_name: last_name
     },
-    credit_card: %{
-      number: number,
-      security_code: security_code,
-      expiration_date: expiration_date
+    payment_method: %{
+      cc_number: number,
+      cc_security_code: security_code,
+      cc_expiration_date: expiration_date
     }
-  } = cart, map}) do
+  } = cart, map}) when payment_method in @credit_cards do
     credit_card = %{
       number: number,
       securityCode: security_code,
@@ -252,7 +282,7 @@ defmodule PaymentGateway.Gateway.PayuLatam do
 
     {:payu_latam, cart, map}
   end
-  def add_credit_card(_request_data) do
+  def add_payment_method(_request_data) do
     {:error, "cart is missing credit card data"}
   end
 
@@ -308,6 +338,8 @@ defmodule PaymentGateway.Gateway.PayuLatam do
 
   def request_headers(), do: HTTPoison.process_request_headers(@request_headers)
 
+  def request_options(), do: @request_options
+
   defp set_transaction_type, do: "AUTHORIZATION_AND_CAPTURE"
 
   def tokenize_credit_card(cart), do: Tokens.tokenize_credit_card(cart)
@@ -317,9 +349,9 @@ defmodule PaymentGateway.Gateway.PayuLatam do
   def query_tokens(cart), do: Tokens.query_tokens(cart)
 
   def add_token({%{
-    credit_card: %{
-      token_id: token_id,
-      security_code: security_code
+    payment_method: %{
+      cc_token_id: token_id,
+      cc_security_code: security_code
     }
   } = cart, map}) do
     credit_card = %{
